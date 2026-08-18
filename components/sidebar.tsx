@@ -11,7 +11,7 @@ export function Sidebar({ email, profile }: { email: string | null; profile: Cur
   const path = usePathname(); const [open, setOpen] = useState(false);
   useEffect(() => { const close = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); }; window.addEventListener("keydown", close); return () => window.removeEventListener("keydown", close); }, []);
   if (path === "/login" || path === "/signup" || path.startsWith("/auth/")) return null;
-  const links = profile?.role === "manager" ? [...baseLinks.slice(0, 3), ["/review", "Review queue"], baseLinks[3]] : baseLinks;
+  const links = profile?.role === "admin" ? [...baseLinks.slice(0, 3), ["/review", "Review queue"], baseLinks[3], ["/admin", "User access"]] : profile?.role === "manager" ? [...baseLinks.slice(0, 3), ["/review", "Review queue"], baseLinks[3]] : baseLinks;
   return <>
     <button className="menu-button" aria-label={open ? "Close navigation" : "Open navigation"} aria-expanded={open} aria-controls="primary-nav" onClick={() => setOpen(!open)}>☰ <span>Menu</span></button>
     <aside id="primary-nav" className={open ? "sidebar open" : "sidebar"}>

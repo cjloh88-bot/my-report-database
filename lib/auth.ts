@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export type UserRole = "engineer" | "manager";
+export type UserRole = "engineer" | "manager" | "admin";
 export type CurrentProfile = { id: string; display_name: string; role: UserRole };
 
 export async function getCurrentUser() {
@@ -26,7 +26,12 @@ export async function requireProfile() {
 
 export async function requireRole(role: UserRole) {
   const profile = await requireProfile();
-  if (profile.role !== role) throw new Error(`${role === "manager" ? "Manager" : "Engineer"} access required.`);
+  if (profile.role !== role) throw new Error(`${role[0].toUpperCase()}${role.slice(1)} access required.`);
   return profile;
 }
 
+export async function requireAnyRole(...roles: UserRole[]) {
+  const profile = await requireProfile();
+  if (!roles.includes(profile.role)) throw new Error("You do not have access to this action.");
+  return profile;
+}
