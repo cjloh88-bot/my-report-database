@@ -27,6 +27,13 @@ export async function submitReport(id: string) {
 
 export async function startReview(id: string) { return transition(id, "under_review"); }
 
+export async function commentOnReport(id: string, reviewer: string, comment: string) {
+  const report = await getReport(id);
+  if (!report || !(["submitted", "under_review"] as ReportStatus[]).includes(report.status)) throw new Error("Comments can only be added while a report is awaiting review.");
+  if (!reviewer.trim() || !comment.trim()) throw new Error("Reviewer name and comment are required.");
+  return createComment({ report_id: id, author_name: reviewer.trim(), comment_text: comment.trim(), action: "comment" });
+}
+
 export async function approveReport(id: string, reviewer: string, comment: string) {
   if (!reviewer.trim() || !comment.trim()) throw new Error("Reviewer name and approval comment are required.");
   await transition(id, "approved", { reviewed_by_name: reviewer.trim(), reviewed_at: new Date().toISOString() });
@@ -47,4 +54,3 @@ export async function editReport(id: string, input: { title: string; content: st
   if (input.content !== (current.content ?? "")) await createRevision({ report_id: id, content: input.content, changed_by_name: input.submitted_by_name, change_summary: input.change_summary || "Report updated" });
   return updateReport(id, { title: input.title.trim(), content: input.content.trim(), due_date: input.due_date, submitted_by_name: input.submitted_by_name.trim(), status: current.status === "returned" ? "draft" : "draft" });
 }
-

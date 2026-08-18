@@ -6,7 +6,7 @@ import { createProject, deleteProject, updateProject } from "@/lib/data/projects
 import { createStage } from "@/lib/data/stages";
 import { createReport, deleteReport } from "@/lib/data/reports";
 import { createRevision } from "@/lib/data/revisions";
-import { approveReport, editReport, returnReport, startReview, submitReport } from "@/lib/actions/report-flow";
+import { approveReport, commentOnReport, editReport, returnReport, startReview, submitReport } from "@/lib/actions/report-flow";
 
 const text = (form: FormData, key: string) => String(form.get(key) ?? "").trim();
 const required = (form: FormData, key: string, label: string) => {
@@ -48,6 +48,6 @@ export async function editReportAction(form: FormData) {
 export async function deleteReportAction(form: FormData) { await deleteReport(required(form, "id", "Report")); refresh(); redirect("/reports"); }
 export async function submitReportAction(form: FormData) { const id = required(form, "id", "Report"); await submitReport(id); refresh(); revalidatePath(`/reports/${id}`); }
 export async function startReviewAction(form: FormData) { const id = required(form, "id", "Report"); await startReview(id); refresh(); revalidatePath(`/reports/${id}`); }
+export async function commentOnReportAction(form: FormData) { const id = required(form, "id", "Report"); await commentOnReport(id, required(form, "reviewer", "Reviewer"), required(form, "comment", "Comment")); refresh(); revalidatePath(`/reports/${id}`); }
 export async function approveReportAction(form: FormData) { const id = required(form, "id", "Report"); await approveReport(id, required(form, "reviewer", "Reviewer"), required(form, "comment", "Comment")); refresh(); revalidatePath(`/reports/${id}`); }
 export async function returnReportAction(form: FormData) { const id = required(form, "id", "Report"); await returnReport(id, required(form, "reviewer", "Reviewer"), required(form, "comment", "Comment")); refresh(); revalidatePath(`/reports/${id}`); }
-
