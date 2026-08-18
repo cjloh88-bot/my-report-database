@@ -14,4 +14,3 @@ export async function createRevision(input: Omit<Revision, "id" | "created_at" |
   if (error) throw error;
   return data as Revision;
 }
-

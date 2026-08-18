@@ -13,7 +13,7 @@ export async function getProject(id: string) {
   return data as Project | null;
 }
 
-export async function createProject(input: Pick<Project, "name" | "description" | "owner_name" | "status">) {
+export async function createProject(input: Pick<Project, "name" | "description" | "owner_name" | "status" | "user_id">) {
   const { data, error } = await (await createClient()).from("projects").insert(input).select().single();
   if (error) throw error;
   return data as Project;
@@ -29,4 +29,3 @@ export async function deleteProject(id: string) {
   const { error } = await (await createClient()).from("projects").delete().eq("id", id);
   if (error) throw error;
 }
-

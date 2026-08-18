@@ -18,7 +18,7 @@ export async function getReport(id: string) {
   return data as Report | null;
 }
 
-export async function createReport(input: Pick<Report, "project_id" | "stage_id" | "title" | "content" | "due_date" | "submitted_by_name">) {
+export async function createReport(input: Pick<Report, "project_id" | "stage_id" | "title" | "content" | "due_date" | "submitted_by_name" | "user_id">) {
   const { data, error } = await (await createClient()).from("reports").insert({ ...input, status: "draft" }).select().single();
   if (error) throw error;
   return data as Report;
@@ -34,4 +34,3 @@ export async function deleteReport(id: string) {
   const { error } = await (await createClient()).from("reports").delete().eq("id", id);
   if (error) throw error;
 }
-

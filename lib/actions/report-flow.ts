@@ -3,6 +3,7 @@ import { createComment } from "@/lib/data/comments";
 import { getReport, updateReport } from "@/lib/data/reports";
 import { createRevision } from "@/lib/data/revisions";
 import type { ReportStatus } from "@/lib/data/types";
+import type { CurrentProfile } from "@/lib/auth";
 
 const allowed: Record<ReportStatus, ReportStatus[]> = {
   draft: ["submitted"], submitted: ["under_review"], under_review: ["approved", "returned"],
@@ -19,38 +20,43 @@ async function transition(id: string, target: ReportStatus, extra: Record<string
   return data;
 }
 
-export async function submitReport(id: string) {
+export async function submitReport(id: string, actor: CurrentProfile) {
   const report = await getReport(id);
+  if (report?.user_id !== actor.id) throw new Error("You can only submit your own report.");
   if (!report?.content?.trim() || !report.title.trim() || !report.submitted_by_name?.trim()) throw new Error("Complete the title, content, and submitter before submitting.");
   return transition(id, "submitted", { submitted_at: new Date().toISOString(), reviewed_at: null, reviewed_by_name: null });
 }
 
-export async function startReview(id: string) { return transition(id, "under_review"); }
+export async function startReview(id: string, actor: CurrentProfile) {
+  if (actor.role !== "manager") throw new Error("Manager access required.");
+  return transition(id, "under_review");
+}
 
-export async function commentOnReport(id: string, reviewer: string, comment: string) {
+export async function commentOnReport(id: string, actor: CurrentProfile, comment: string) {
   const report = await getReport(id);
   if (!report || !(["submitted", "under_review"] as ReportStatus[]).includes(report.status)) throw new Error("Comments can only be added while a report is awaiting review.");
-  if (!reviewer.trim() || !comment.trim()) throw new Error("Reviewer name and comment are required.");
-  return createComment({ report_id: id, author_name: reviewer.trim(), comment_text: comment.trim(), action: "comment" });
+  if (actor.role !== "manager" || !comment.trim()) throw new Error("Manager access and comment are required.");
+  return createComment({ report_id: id, author_name: actor.display_name, comment_text: comment.trim(), action: "comment", user_id: actor.id });
 }
 
-export async function approveReport(id: string, reviewer: string, comment: string) {
-  if (!reviewer.trim() || !comment.trim()) throw new Error("Reviewer name and approval comment are required.");
-  await transition(id, "approved", { reviewed_by_name: reviewer.trim(), reviewed_at: new Date().toISOString() });
-  return createComment({ report_id: id, author_name: reviewer.trim(), comment_text: comment.trim(), action: "approve" });
+export async function approveReport(id: string, actor: CurrentProfile, comment: string) {
+  if (actor.role !== "manager" || !comment.trim()) throw new Error("Manager access and approval comment are required.");
+  await transition(id, "approved", { reviewed_by_name: actor.display_name, reviewed_at: new Date().toISOString() });
+  return createComment({ report_id: id, author_name: actor.display_name, comment_text: comment.trim(), action: "approve", user_id: actor.id });
 }
 
-export async function returnReport(id: string, reviewer: string, comment: string) {
-  if (!reviewer.trim() || !comment.trim()) throw new Error("Reviewer name and return reason are required.");
-  await transition(id, "returned", { reviewed_by_name: reviewer.trim(), reviewed_at: new Date().toISOString() });
-  return createComment({ report_id: id, author_name: reviewer.trim(), comment_text: comment.trim(), action: "return" });
+export async function returnReport(id: string, actor: CurrentProfile, comment: string) {
+  if (actor.role !== "manager" || !comment.trim()) throw new Error("Manager access and return reason are required.");
+  await transition(id, "returned", { reviewed_by_name: actor.display_name, reviewed_at: new Date().toISOString() });
+  return createComment({ report_id: id, author_name: actor.display_name, comment_text: comment.trim(), action: "return", user_id: actor.id });
 }
 
-export async function editReport(id: string, input: { title: string; content: string; due_date: string | null; submitted_by_name: string; change_summary: string }) {
+export async function editReport(id: string, input: { title: string; content: string; due_date: string | null; submitted_by_name: string; change_summary: string }, actor: CurrentProfile) {
   const current = await getReport(id);
   if (!current) throw new Error("Report not found.");
+  if (current.user_id !== actor.id) throw new Error("You can only edit your own report.");
   if (!(["draft", "returned"] as ReportStatus[]).includes(current.status)) throw new Error("Only draft or returned reports can be edited.");
   if (!input.title.trim() || !input.content.trim() || !input.submitted_by_name.trim()) throw new Error("Title, content, and submitter are required.");
-  if (input.content !== (current.content ?? "")) await createRevision({ report_id: id, content: input.content, changed_by_name: input.submitted_by_name, change_summary: input.change_summary || "Report updated" });
+  if (input.content !== (current.content ?? "")) await createRevision({ report_id: id, content: input.content, changed_by_name: actor.display_name, change_summary: input.change_summary || "Report updated", user_id: actor.id });
   return updateReport(id, { title: input.title.trim(), content: input.content.trim(), due_date: input.due_date, submitted_by_name: input.submitted_by_name.trim(), status: current.status === "returned" ? "draft" : "draft" });
 }

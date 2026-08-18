@@ -10,7 +10,7 @@ export async function listStages(projectId?: string) {
   return data as Stage[];
 }
 
-export async function createStage(input: Pick<Stage, "project_id" | "name" | "order_num">) {
+export async function createStage(input: Pick<Stage, "project_id" | "name" | "order_num" | "user_id">) {
   const { data, error } = await (await createClient()).from("stages").insert(input).select().single();
   if (error) throw error;
   return data as Stage;
@@ -21,4 +21,3 @@ export async function updateStage(id: string, input: Partial<Pick<Stage, "name" 
   if (error) throw error;
   return data as Stage;
 }
-

@@ -12,4 +12,3 @@ export async function createComment(input: Omit<ReviewComment, "id" | "created_a
   if (error) throw error;
   return data as ReviewComment;
 }
-

@@ -35,7 +35,20 @@ export async function updateSession(request: NextRequest) {
     });
 
     // Refresh session so it doesn't expire while user is active
-    await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
+    const publicPath = request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup" || request.nextUrl.pathname.startsWith("/auth/") || request.nextUrl.pathname === "/api/health";
+    if (!user && !publicPath) {
+      const destination = request.nextUrl.clone(); destination.pathname = "/login"; destination.search = "";
+      const redirectResponse = NextResponse.redirect(destination);
+      response.cookies.getAll().forEach(cookie => redirectResponse.cookies.set(cookie));
+      return redirectResponse;
+    }
+    if (user && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup")) {
+      const destination = request.nextUrl.clone(); destination.pathname = "/"; destination.search = "";
+      const redirectResponse = NextResponse.redirect(destination);
+      response.cookies.getAll().forEach(cookie => redirectResponse.cookies.set(cookie));
+      return redirectResponse;
+    }
     return response;
   } catch {
     // Never let an auth hiccup crash the entire edge middleware
