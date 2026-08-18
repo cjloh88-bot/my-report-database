@@ -1,0 +1,22 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getProject } from "@/lib/data/projects";
+import { listStages } from "@/lib/data/stages";
+import { listReports } from "@/lib/data/reports";
+import { createReportAction, createStageAction, deleteProjectAction, updateProjectAction } from "@/app/actions";
+import { StatusBadge } from "@/components/status-badge";
+import { SubmitButton } from "@/components/submit-button";
+import { DeleteButton } from "@/components/delete-button";
+export const dynamic = "force-dynamic";
+
+export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params; const project = await getProject(id); if (!project) notFound();
+  const [stages, reports] = await Promise.all([listStages(id), listReports({ projectId: id })]);
+  return <><div className="breadcrumb"><Link href="/projects">Projects</Link><span>/</span><span>{project.name}</span></div><header className="page-header"><div><p className="eyebrow">PROJECT DETAIL</p><h1>{project.name}</h1><p>{project.description || "No description"}</p></div><span className="project-status large">{project.status}</span></header>
+    <section className="panel"><div className="section-heading"><div><h2>Development stages</h2><p>Latest report status by stage</p></div></div>{stages.length === 0 ? <div className="empty"><h3>No stages yet</h3><p>Add the first stage below.</p></div> : <div className="stage-columns">{stages.map(stage => { const stageReports = reports.filter(r => r.stage_id === stage.id); return <article key={stage.id}><div className="stage-number">{stage.order_num}</div><h3>{stage.name}</h3><span className="muted small">{stageReports.length} report{stageReports.length === 1 ? "" : "s"}</span>{stageReports.map(report => <Link className="mini-report" href={`/reports/${report.id}`} key={report.id}><span>{report.title}</span><StatusBadge status={report.status}/></Link>)}<a href={`#new-report-${stage.id}`} className="text-link">+ New report</a></article>})}</div>}</section>
+    <section className="two-panels"><div className="panel form-panel"><p className="eyebrow">ADD STAGE</p><h2>Extend the workflow</h2><form action={createStageAction} className="form-stack"><input type="hidden" name="project_id" value={id}/><label>Stage name<input name="name" maxLength={100} required placeholder="e.g. Prototype"/></label><label>Display order<input name="order_num" type="number" min="0" defaultValue={stages.length + 1}/></label><SubmitButton>Add stage</SubmitButton></form></div>
+      <div className="panel form-panel"><p className="eyebrow">PROJECT SETTINGS</p><h2>Edit project</h2><form action={updateProjectAction} className="form-stack"><input type="hidden" name="id" value={id}/><label>Name<input name="name" maxLength={120} required defaultValue={project.name}/></label><label>Owner<input name="owner_name" maxLength={100} required defaultValue={project.owner_name ?? ""}/></label><label>Description<textarea name="description" maxLength={1000} rows={3} defaultValue={project.description ?? ""}/></label><label>Status<select name="status" defaultValue={project.status}><option value="active">Active</option><option value="on_hold">On hold</option><option value="completed">Completed</option></select></label><SubmitButton>Save project</SubmitButton></form><form action={deleteProjectAction} className="delete-form"><input type="hidden" name="id" value={id}/><DeleteButton label="Delete project"/></form></div></section>
+    {stages.map(stage => <section className="panel form-panel" id={`new-report-${stage.id}`} key={stage.id}><p className="eyebrow">NEW REPORT · {stage.name.toUpperCase()}</p><h2>Create a working draft</h2><form action={createReportAction} className="report-form"><input type="hidden" name="project_id" value={id}/><input type="hidden" name="stage_id" value={stage.id}/><label>Report title<input name="title" maxLength={180} required placeholder={`${project.name} — ${stage.name} Report`}/></label><label>Submitter name<input name="submitted_by_name" maxLength={100} required defaultValue={project.owner_name ?? ""}/></label><label>Due date<input name="due_date" type="date"/></label><label className="full">Report content<textarea name="content" minLength={20} maxLength={50000} required rows={10} placeholder="Document findings, test data, risks, recommendations, and next steps…"/></label><div className="full"><SubmitButton>Save draft</SubmitButton></div></form></section>)}
+  </>;
+}
+
