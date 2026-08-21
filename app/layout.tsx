@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { getCurrentProfile, getCurrentUser } from "@/lib/auth";
@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   title: "ReportBase — Engineering reporting",
   description: "Submit, review, approve, and track engineering project reports.",
 };
+
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#12251f" };
 
 export default async function RootLayout({
   children,
