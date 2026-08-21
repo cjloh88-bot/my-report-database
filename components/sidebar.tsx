@@ -6,14 +6,15 @@ import { signOutAction } from "@/app/auth/actions";
 import type { CurrentProfile } from "@/lib/auth";
 
 const baseLinks = [["/", "Dashboard"], ["/projects", "Projects"], ["/reports", "Reports"], ["/activity", "Activity"]];
-const linkIcons: Record<string, string> = { "/": "⌂", "/projects": "▦", "/reports": "▤", "/review": "✓", "/activity": "↺", "/admin": "⚙" };
+const linkIcons: Record<string, string> = { "/": "⌂", "/projects": "▦", "/reports": "▤", "/review": "✓", "/activity": "↺", "/assistant": "✦", "/admin": "⚙" };
 
-export function Sidebar({ email, profile }: { email: string | null; profile: CurrentProfile | null }) {
+export function Sidebar({ email, profile, assistantOwner = false }: { email: string | null; profile: CurrentProfile | null; assistantOwner?: boolean }) {
   const path = usePathname(); const [open, setOpen] = useState(false);
   useEffect(() => { const close = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); }; window.addEventListener("keydown", close); return () => window.removeEventListener("keydown", close); }, []);
   useEffect(() => { document.body.classList.toggle("nav-open", open); return () => document.body.classList.remove("nav-open"); }, [open]);
   if (path === "/login" || path === "/signup" || path.startsWith("/auth/")) return null;
-  const links = profile?.role === "admin" ? [...baseLinks.slice(0, 3), ["/review", "Review queue"], baseLinks[3], ["/admin", "User access"]] : profile?.role === "manager" ? [...baseLinks.slice(0, 3), ["/review", "Review queue"], baseLinks[3]] : baseLinks;
+  const adminLinks = [...baseLinks.slice(0, 3), ["/review", "Review queue"], baseLinks[3], ...(assistantOwner ? [["/assistant", "AI assistant"]] : []), ["/admin", "User access"]];
+  const links = profile?.role === "admin" ? adminLinks : profile?.role === "manager" ? [...baseLinks.slice(0, 3), ["/review", "Review queue"], baseLinks[3]] : baseLinks;
   const mobileLinks = profile?.role === "admin" ? links.filter(([href]) => href !== "/activity") : links;
   const active = (href: string) => href === "/" ? path === href : path.startsWith(href);
   return <>

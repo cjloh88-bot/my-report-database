@@ -16,9 +16,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const [user, profile] = await Promise.all([getCurrentUser(), getCurrentProfile()]);
+  const assistantOwner = Boolean(user?.email && user.email.toLowerCase() === (process.env.ASSISTANT_OWNER_EMAIL || "cjloh88ai@gmail.com").trim().toLowerCase());
   return (
     <html lang="en">
-      <body><Sidebar email={user?.email ?? null} profile={profile}/><main className="app-main">{children}</main></body>
+      <body><Sidebar email={user?.email ?? null} profile={profile} assistantOwner={assistantOwner}/><main className="app-main">{children}</main></body>
     </html>
   );
 }
